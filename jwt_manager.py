@@ -12,7 +12,6 @@ def create_token(data: dict):
 
 # decode recibe(dato, key, algoritmo para decifrar el token)
 
-
 def validate_token(token: str) -> dict:
     data: dict = decode(token, key='my_secret_key', algorithms=['HS256'])
     return data

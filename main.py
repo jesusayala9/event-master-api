@@ -8,8 +8,8 @@ from pydantic import BaseModel, Field
 from fastapi.responses import HTMLResponse, JSONResponse
 from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
-from config.database import Session, engine, Base
-from models.event import Event
+# from config.database import Session, engine, Base
+# from models.event import Event
 
 
 app = FastAPI()
@@ -121,8 +121,7 @@ events = [
 def format_event_dates(events):
     for item in events:
         if isinstance(item['startTime'], str):
-            item['startTime'] = datetime.fromisoformat(item['startTime'])
-        # Cambiar de 'finishDate' a 'finishTime'
+            item['startTime'] = datetime.fromisoformat(item['startTime'])        
         if isinstance(item['finishTime'], str):
             item['finishTime'] = datetime.fromisoformat(item['finishTime'])
         item['startTime'] = item['startTime'].isoformat()
@@ -208,8 +207,7 @@ def update_Event(id: int, event: Event) -> dict:
             item['id'] = event.id
             item['title'] = event.title
             item['description'] = event.description
-            item['startTime'] = event.startTime
-            # Corregir el nombre del atributo
+            item['startTime'] = event.startTime           
             item['finishTime'] = event.finishTime
             item['category'] = event.category
             item['audience'] = event.audience

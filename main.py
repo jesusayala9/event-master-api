@@ -1,6 +1,6 @@
 from datetime import datetime
 from http.client import HTTPException
-from typing import Any, Coroutine,  List
+from typing import Any, Coroutine,  List, Annotated
 from enum import Enum
 from fastapi import Depends, FastAPI, Body, Path, Query, Request
 from fastapi.security.http import HTTPAuthorizationCredentials
@@ -8,24 +8,27 @@ from pydantic import BaseModel, Field
 from fastapi.responses import HTMLResponse, JSONResponse
 from jwt_manager import create_token, validate_token
 from fastapi.security import HTTPBearer
-# from config.database import Session, engine, Base
-# from models.event import Event
+from sqlalchemy.orm import Session
+from models.event import Event as EventModel
+from config.database import engine, SessionLocal, Base
 
 
 app = FastAPI()
 app.title = 'EventMaster API'
 app.version = '0.0.1'
 
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 
 # validar datos del usuario
 class JWTBearer(HTTPBearer):
     async def __call__(self, request: Request):
-        auth = await super().__call__(request)# obtiene las credenciales del token
-        data = validate_token(auth.credentials)# valida y decodificar y devuelve los datos contenidos.
+        auth = await super().__call__(request)  # obtiene las credenciales del token
+        # valida y decodificar y devuelve los datos contenidos.
+        data = validate_token(auth.credentials)
         if data['email'] != 'admin@gmail.com':
-            raise HTTPException(status_code= 403, detail='Credenciales son invalidas')
+            raise HTTPException(
+                status_code=403, detail='Credenciales son invalidas')
 
 
 class User(BaseModel):
@@ -58,6 +61,7 @@ class Event(BaseModel):
         return {
             "id": self.id,
             "title": self.title,
+            "description": self.description,
             "startTime": self.startTime,
             "finishTime": self.finishTime,
             "category": self.category,
@@ -71,6 +75,7 @@ class Event(BaseModel):
             'example': {
                 'id': 1,
                 'title': 'Nuevo Evento',
+                'description': 'Sin descripcion',
                 'startTime': datetime(2024, 1, 4, 10, 0),
                 'finishTime': datetime(2024, 1, 4, 11, 0),
                 'category': 'students',
@@ -108,20 +113,21 @@ events = [
 ]
 
 
-# def format_event_dates(events):
-#     for item in events:
-#         if isinstance(item['startTime'], str):
-#             item['startTime'] = datetime.fromisoformat(item['startTime'])
-#         if isinstance(item['finishDate'], str):
-#             item['finishTime'] = datetime.fromisoformat(item['finishTime'])
-#         item['startTime'] = item['startTime'].isoformat()
-#         item['finishTime'] = item['finishTime'].isoformat()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+db_dependency = Annotated[Session, Depends(get_db)]
 
 
 def format_event_dates(events):
     for item in events:
         if isinstance(item['startTime'], str):
-            item['startTime'] = datetime.fromisoformat(item['startTime'])        
+            item['startTime'] = datetime.fromisoformat(item['startTime'])
         if isinstance(item['finishTime'], str):
             item['finishTime'] = datetime.fromisoformat(item['finishTime'])
         item['startTime'] = item['startTime'].isoformat()
@@ -175,28 +181,34 @@ def get_events_by_Category(category: str) -> list[Event]:
 # metodos POST
 
 
+# @app.post('/events', tags=['Events'], response_model=dict, status_code=201)
+# def create_event(event: Event) -> dict:
+#     # Convertir el evento a un diccionario y agregarlo a la lista events
+#     db_Session = Session()
+#     new_event = EventModel(**event.model_dump())
+#     db_Session.add(new_event)
+#     db_Session.commit()
+#     # events.append(event.model_dump())
+#     return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+
 @app.post('/events', tags=['Events'], response_model=dict, status_code=201)
-def create_event(event: Event) -> dict:
-    # Convertir el evento a un diccionario y agregarlo a la lista events
-    events.append(event.model_dump())
-    return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
+    try:
+        new_event = EventModel(**event.model_dump())
+        db.add(new_event)
+        db.commit()
+        return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+    except Exception as e:
+        db.rollback()  
+        return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
+    finally:
+        db.close()  
+        
+        print("Este es el model_dump", event.model_dump())
 
 # metodo PUT
 
 
-# @app.put('/events/{id}', tags=['Events'])
-# def uptdate_Event(id: int, event: Event):
-#     for item in events:
-#         if item['id'] == id:
-#             item['title'] = event.title
-#             item['description'] = event.description
-#             item['startTime'] = event.startTime
-#             item['finisTime'] = event.finishTime
-#             item['category'] = event.category
-#             item['audience'] = event.audience
-#             item['type'] = event.type
-#             item['location'] = event.location
-#             return JSONResponse(content={'message':'Se ha modificado el evento'})
 
 
 @app.put('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
@@ -207,7 +219,7 @@ def update_Event(id: int, event: Event) -> dict:
             item['id'] = event.id
             item['title'] = event.title
             item['description'] = event.description
-            item['startTime'] = event.startTime           
+            item['startTime'] = event.startTime
             item['finishTime'] = event.finishTime
             item['category'] = event.category
             item['audience'] = event.audience
@@ -230,9 +242,3 @@ def delete_event(id: int) -> dict:
     return JSONResponse(status_code=404, content={'message': f'No se encontró ningún evento con el ID {id}'})
 
 
-# @app.delete('/events/{id}', tags=['Events'])
-# def delete_event(id: int):
-#     for item in events:
-#         if item['id'] == id:
-#             events.remove(item)
-#             return events

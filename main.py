@@ -2,7 +2,7 @@ from datetime import datetime
 from http.client import HTTPException
 from typing import Any, Coroutine,  List, Annotated
 from enum import Enum
-from fastapi import Depends, FastAPI, Body, Path, Query, Request
+from fastapi import Depends, FastAPI, Body, Path, Query, Request, HTTPException
 from fastapi.security.http import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -11,6 +11,8 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from models.event import Event as EventModel
 from config.database import engine, SessionLocal, Base
+from fastapi.encoders import jsonable_encoder
+
 
 
 app = FastAPI()
@@ -125,13 +127,27 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 
 def format_event_dates(events):
-    for item in events:
-        if isinstance(item['startTime'], str):
-            item['startTime'] = datetime.fromisoformat(item['startTime'])
-        if isinstance(item['finishTime'], str):
-            item['finishTime'] = datetime.fromisoformat(item['finishTime'])
-        item['startTime'] = item['startTime'].isoformat()
-        item['finishTime'] = item['finishTime'].isoformat()
+    for event in events:
+        if isinstance(event.startTime, str):
+            event.startTime = datetime.fromisoformat(event.startTime)
+        if isinstance(event.finishTime, str):
+            event.finishTime = datetime.fromisoformat(event.finishTime)
+        event.startTime = event.startTime.isoformat()
+        event.finishTime = event.finishTime.isoformat()
+        # Construir un diccionario manualmente
+        event_dict = {
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "startTime": event.startTime,
+            "finishTime": event.finishTime,
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location
+        }
+        # Reemplazar el objeto Event con el diccionario correspondiente
+        events[events.index(event)] = event_dict
 
 # endpoints
 # metodos GET
@@ -152,33 +168,91 @@ def login(user: User):
 
 
 @app.get('/events', tags=['Events'], response_model=list[Event], status_code=200, dependencies=[Depends(JWTBearer())])
-def get_events() -> list[Event]:
-    response = events
-    format_event_dates(response)
-    return JSONResponse(status_code=200, content=response)
+def get_events(db: Session = Depends(get_db)) -> list[Event]:
+    result = db.query(EventModel).all()
+    format_event_dates(result)
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 @app.get('/events/{id}', tags=['Events'], response_model=Event)
-def get_event(id: int) -> Event:
-    for item in events:
-        if item['id'] == id:
-            # Copia el diccionario para evitar modificaciones en el original
-            response = [item.copy()]
-            format_event_dates(response)
-            return JSONResponse(content=response)
-    return JSONResponse(status_code=404, content=[])
+def get_event(id: int, db: Session = Depends(get_db)) -> Event:
+    result = db.query(EventModel).filter(EventModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={'message': "No encontrado"})
+    return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 # si no se especifica el parametro en la direccion, se detecta como parametro query
 @app.get('/events/', tags=['Events'], response_model=list[Event])
-def get_events_by_Category(category: str) -> list[Event]:
-    filtered_events = [item for item in events if item['category'] == category]
-    # Formatear fechas en los eventos filtrados
-    format_event_dates(filtered_events)
-    return JSONResponse(content=filtered_events)
+def get_events_by_Category(category: str = Query(min_length=5, max_length=15), db: Session = Depends(get_db)) -> list[Event]:
+    try:
+        result = db.query(EventModel).filter(EventModel.category == category).all()
+        if not result:
+            return JSONResponse(status_code=404, content={'message': 'No se encontraron eventos para la categoría especificada'})
+        format_event_dates(result)
+        return JSONResponse(status_code=200, content=jsonable_encoder(result))
+    except Exception as e:
+        return JSONResponse(status_code=500, content={'message': str(e)})
+
+
+# def get_events_by_Category(category: str = Query(min_length=5, max_length=15)) -> list[Event]:
+#     db = Session()
+#     result = db.query(EventModel. category == category).all()       
+#     # Formatear fechas en los eventos filtrados
+#     format_event_dates(result)
+#     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
 # metodos POST
+
+
+@app.post('/events', tags=['Events'], response_model=dict, status_code=201)
+def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
+    try:
+        new_event = EventModel(**event.model_dump())
+        db.add(new_event)
+        db.commit()
+        return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
+    finally:
+        db.close()
+
+        print("Este es el model_dump", event.model_dump())
+
+# metodo PUT
+
+
+@app.put('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
+def update_Event(id: int, event: Event, db: Session = Depends(get_db)) -> dict:
+    result = db.query(EventModel).filter(EventModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={'message': f"Evento con ID {id} No encontrado"})
+    result.id = event.id
+    result.title = event.title
+    result.description = event.description
+    result.startTime = event.startTime
+    result.finishTime = event.finishTime
+    result.category = event.category
+    result.audience = event.audience
+    result.type = event.type
+    result.location = event.location
+    db.commit()
+    return JSONResponse(status_code=200, content={'message': 'Se ha modificado el evento'})   
+
+# metodo DELETE
+
+
+@app.delete('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
+def delete_event(id: int, db: Session = Depends(get_db)) -> dict:
+    result = db.query(EventModel).filter(EventModel.id == id).first()
+    if not result:
+        return JSONResponse(status_code=404, content={'message': f"Evento con ID {id} No encontrado"})
+    db.delete(result)
+    db.commit()
+    return JSONResponse(status_code=200, content={'message': f'Evento con ID {id} ha sido eliminado'})
+    
 
 
 # @app.post('/events', tags=['Events'], response_model=dict, status_code=201)
@@ -190,55 +264,3 @@ def get_events_by_Category(category: str) -> list[Event]:
 #     db_Session.commit()
 #     # events.append(event.model_dump())
 #     return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
-
-@app.post('/events', tags=['Events'], response_model=dict, status_code=201)
-def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
-    try:
-        new_event = EventModel(**event.model_dump())
-        db.add(new_event)
-        db.commit()
-        return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
-    except Exception as e:
-        db.rollback()  
-        return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
-    finally:
-        db.close()  
-        
-        print("Este es el model_dump", event.model_dump())
-
-# metodo PUT
-
-
-
-
-@app.put('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
-def update_Event(id: int, event: Event) -> dict:
-    for item in events:
-        if item['id'] == id:
-            # Actualizar los atributos del evento con los valores del objeto Event recibido
-            item['id'] = event.id
-            item['title'] = event.title
-            item['description'] = event.description
-            item['startTime'] = event.startTime
-            item['finishTime'] = event.finishTime
-            item['category'] = event.category
-            item['audience'] = event.audience
-            item['type'] = event.type
-            item['location'] = event.location
-            return JSONResponse(status_code=200, content={'message': 'Se ha modificado el evento'})
-    # Si no se encuentra ningún evento con el ID especificado, devolver un mensaje de error
-    return JSONResponse(status_code=404, content={'message': 'Evento con ID {id} no encontrado'})
-
-# metodo DELETE
-
-
-@app.delete('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
-def delete_event(id: int) -> dict:
-    for item in events:
-        if item['id'] == id:
-            events.remove(item)
-            return JSONResponse(status_code=200, content={'message': f'Evento con ID {id} ha sido eliminado'})
-    # Si no se encuentra ningún evento con el ID especificado, devolver un mensaje de error
-    return JSONResponse(status_code=404, content={'message': f'No se encontró ningún evento con el ID {id}'})
-
-

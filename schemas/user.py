@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-class User(BaseModel):
+class Users(BaseModel):
     id: int
     name: str = Field(default='jhon', max_length=20)
     email: str = Field(default='jhon@mail.com', max_length=20)

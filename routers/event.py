@@ -9,6 +9,7 @@ from config.database import SessionLocal
 from fastapi.encoders import jsonable_encoder
 from services.event import EventService
 from schemas.event import Event
+from middlewares.jwt_bearer import JWTBearer
 
 event_router = APIRouter()
 
@@ -24,48 +25,6 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-# class EventType(str, Enum):
-#     presencial = "Presencial"
-#     virtual = "Virtual"
-
-# class Event(BaseModel):
-#     id: int
-#     title: str = Field(default='Nuevo Evento', max_length=20)
-#     description: str = Field(default='sin Descripcion', max_length=50)
-#     startTime: datetime = Field(datetime(2024, 1, 4, 10, 0))
-#     finishTime: datetime = Field(datetime(2024, 1, 4, 11, 0))
-#     category: str = Field(default='Sin Categoria', max_length=20)
-#     audience: int = Field(default=0)
-#     type: EventType = Field(default=EventType.presencial)
-#     location: str = Field(default='Sin Locacion')
-
-#     def model_dump(self):
-#         return {
-#             "id": self.id,
-#             "title": self.title,
-#             "description": self.description,
-#             "startTime": self.startTime,
-#             "finishTime": self.finishTime,
-#             "category": self.category,
-#             "audience": self.audience,
-#             'type': self.type,
-#             'location': self.location
-#         }
-
-#     class Config:
-#         schema_extra = {
-#             'example': {
-#                 'id': 1,
-#                 'title': 'Nuevo Evento',
-#                 'description': 'Sin descripcion',
-#                 'startTime': datetime(2024, 1, 4, 10, 0),
-#                 'finishTime': datetime(2024, 1, 4, 11, 0),
-#                 'category': 'students',
-#                 'audience': 0,
-#                 'type': EventType.presencial,
-#                 'location': 'Sin Locacion'
-#             }
-#         }
 
 def format_event_dates(events):
     for event in events:
@@ -91,7 +50,7 @@ def format_event_dates(events):
         events[events.index(event)] = event_dict
 
 
-@event_router.get('/events', tags=['Events'], response_model=list[Event], status_code=200, )
+@event_router.get('/events', tags=['Events'], response_model=list[Event], status_code=200 )
 def get_events(db: Session = Depends(get_db)) -> list[Event]:
     result = EventService(db).get_events()
     format_event_dates(result)
@@ -152,6 +111,6 @@ def update_Event(id: int, event: Event, db: Session = Depends(get_db)) -> dict:
 def delete_event(id: int, db: Session = Depends(get_db)) -> dict:
     result = db.query(EventModel).filter(EventModel.id == id).first()
     if not result:
-        return JSONResponse(status_code=404, content={'message': f"Evento con ID {id} No encontrado"})
+        return JSONResponse(status_code=404, content={'message': f"Eventos con ID {id} No encontrado"})
     EventService(db).delete_event(id)
     return JSONResponse(status_code=200, content={'message': f'Evento con ID {id} ha sido eliminado'})

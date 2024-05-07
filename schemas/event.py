@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 from pydantic import BaseModel, Field
 
 
@@ -17,6 +18,7 @@ class Event(BaseModel):
     audience: int = Field(default=0)
     type: EventType = Field(default=EventType.presencial)
     location: str = Field(default='Sin Locacion')
+    owner_id: Optional[int]
 
     def model_dump(self):
         return {
@@ -28,7 +30,9 @@ class Event(BaseModel):
             "category": self.category,
             "audience": self.audience,
             'type': self.type,
-            'location': self.location
+            'location': self.location,
+            'owner_id': self.owner_id
+            
         }
 
     class Config:
@@ -42,6 +46,7 @@ class Event(BaseModel):
                 'category': 'students',
                 'audience': 0,
                 'type': EventType.presencial,
-                'location': 'Sin Locacion'
+                'location': 'Sin Locacion',
+                'owner_id': 123 
             }
         }

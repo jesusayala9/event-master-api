@@ -1,6 +1,7 @@
 from models.event import Event as EventModel
+from models.user import Users
 from schemas.event import Event
-
+from sqlalchemy.orm import Session
 
 class EventService():
 
@@ -27,7 +28,7 @@ class EventService():
     
     def update_event(self, id:int, data:Event):
         event = self.db.query(EventModel).filter(EventModel.id == id).first() 
-        event.id = data.id        
+        event.id       
         event.description = data.description
         event.title = data.title
         event.startTime = data.startTime
@@ -37,12 +38,29 @@ class EventService():
         event.type = data.type
         event.location = data.location
         self.db.commit()
-        return
-    
+        return    
     
     def delete_event(self, id:int):
         self.db.query(EventModel).filter(EventModel.id == id).delete()      
         self.db.commit()
         return
+    
+    def get_user_events(self, user_id: int, db: Session):
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            return None
+        return user.events
+
+    def get_user_created_events(self, user_id: int, db: Session):        
+        user = db.query(Users).filter(Users.id == user_id).first()
+        if not user:
+            return None
+        return user.created_events
+
+    def get_event_attendees(self, event_id: int, db: Session):
+        event = db.query(Event).filter(Event.id == event_id).first()
+        if not event:
+            return None
+        return event.attendees
 
 

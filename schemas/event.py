@@ -8,6 +8,7 @@ class EventType(str, Enum):
     presencial = "Presencial"
     virtual = "Virtual"
 
+
 class Event(BaseModel):
     id: int
     title: str = Field(default='Nuevo Evento', max_length=20)
@@ -18,7 +19,7 @@ class Event(BaseModel):
     audience: int = Field(default=0)
     type: EventType = Field(default=EventType.presencial)
     location: str = Field(default='Sin Locacion')
-    owner_id: Optional[int]
+    creator_id: Optional[int]
 
     def model_dump(self):
         return {
@@ -31,8 +32,8 @@ class Event(BaseModel):
             "audience": self.audience,
             'type': self.type,
             'location': self.location,
-            'owner_id': self.owner_id
-            
+            'creator_id': self.creator_id
+
         }
 
     class Config:
@@ -47,6 +48,7 @@ class Event(BaseModel):
                 'audience': 0,
                 'type': EventType.presencial,
                 'location': 'Sin Locacion',
-                'owner_id': 123 
+                'creator_id': 12345
+
             }
         }

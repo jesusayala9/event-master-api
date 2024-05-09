@@ -9,7 +9,7 @@ from config.database import SessionLocal
 from fastapi.encoders import jsonable_encoder
 from services.event import EventService
 from schemas.event import Event
-from middlewares.jwt_bearer import JWTBearer
+# from middlewares.jwt_bearer import JWTBearer
 
 event_router = APIRouter()
 
@@ -114,3 +114,11 @@ def delete_event(id: int, db: Session = Depends(get_db)) -> dict:
         return JSONResponse(status_code=404, content={'message': f"Eventos con ID {id} No encontrado"})
     EventService(db).delete_event(id)
     return JSONResponse(status_code=200, content={'message': f'Evento con ID {id} ha sido eliminado'})
+
+@event_router.get('/events/{id}/attendees', tags=['Events'])
+def get_event_attendees(id: int, db: Session = Depends(get_db)):
+    event_service = EventService(db)
+    event_attendees = event_service.get_event_attendees(id, db)
+    if not event_attendees:
+        return JSONResponse(status_code=404, content={"message": "Event not found or has no attendees."})
+    return JSONResponse(status_code=200, content=event_attendees)

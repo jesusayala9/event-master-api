@@ -1,12 +1,14 @@
+from typing import List
 from pydantic import BaseModel, Field
+from schemas.event import Event
 
 class Users(BaseModel):
     id: int
     username: str = Field(default='jhon', max_length=20)
     email: str = Field(default='jhon@mail.com', max_length=20)
     password: str = Field(default='12345@', max_length=20)
-    events: list = Field(default=['Evento1', 'Evento2'])
-    created_events: list = Field(default=['Evento3', 'Evento4'])
+    events: List[Event] = []
+    created_events: List[Event] = []
  
 
     def model_dump(self):

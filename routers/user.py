@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from config.database import SessionLocal
 from fastapi.encoders import jsonable_encoder
+from services.event import EventService
 from services.user import UserService
 from schemas.user import Users
 from schemas.user import Users as UsersModel
@@ -69,4 +70,20 @@ def delete_user(id: int, db: Session = Depends(get_db)) -> dict:
         return JSONResponse(status_code=404, content={"message": f"Usuario con ID {id} no encontrado"})
     return JSONResponse(status_code=200, content={"message": f"Usuario con ID {id} ha sido eliminado"})
 
+@user_router.get('/users/{id}/events', tags=['Users'])
+def get_user_events(id: int, db: Session = Depends(get_db)):
+    event_service = EventService(db)
+    user_events = event_service.get_user_events(id, db)
+    if not user_events:
+        return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
+    return JSONResponse(status_code=200, content=user_events)
+
+
+@user_router.get('/users/{id}/created_events', tags=['Users'])
+def get_user_created_events(id: int, db: Session = Depends(get_db)):
+    event_service = EventService(db)
+    user_created_events = event_service.get_user_created_events(id, db)
+    if not user_created_events:
+        return JSONResponse(status_code=404, content={"message": "User not found or has no created events."})
+    return JSONResponse(status_code=200, content=user_created_events)
 

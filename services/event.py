@@ -47,10 +47,9 @@ class EventService():
         return
     
     def get_user_events(self, user_id: int, db: Session):
-        user = db.query(UsersModel).filter(UsersModel.id == user_id).first()
+        user = db.query(Users).filter(Users.id == user_id).first()
         if not user:
             return None
-    # Retorna la lista de eventos a los que asiste el usuario
         return user.events
 
     def get_user_created_events(self, user_id: int, db: Session):        

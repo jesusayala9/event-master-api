@@ -28,19 +28,19 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 def format_event_dates(events):
     for event in events:
-        if isinstance(event.startTime, str):
-            event.startTime = datetime.fromisoformat(event.startTime)
-        if isinstance(event.finishTime, str):
-            event.finishTime = datetime.fromisoformat(event.finishTime)
-        event.startTime = event.startTime.isoformat()
-        event.finishTime = event.finishTime.isoformat()
+        if isinstance(event.start_time, str):
+            event.start_time = datetime.fromisoformat(event.start_time)
+        if isinstance(event.finish_time, str):
+            event.finish_time = datetime.fromisoformat(event.finish_time)
+        event.start_time = event.start_time.isoformat()
+        event.finish_time = event.finish_time.isoformat()
         # Construir un diccionario manualmente
         event_dict = {
             "id": event.id,
             "title": event.title,
             "description": event.description,
-            "startTime": event.startTime,
-            "finishTime": event.finishTime,
+            "start_time": event.start_time,
+            "finish_time": event.finish_time,
             "category": event.category,
             "audience": event.audience,
             "type": event.type,

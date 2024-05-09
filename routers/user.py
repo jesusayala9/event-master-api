@@ -73,29 +73,45 @@ def delete_user(id: int, db: Session = Depends(get_db)) -> dict:
     return JSONResponse(status_code=200, content={"message": f"Usuario con ID {id} ha sido eliminado"})
 
 
-
 @user_router.get('/users/{id}/events', tags=['Users'])
 def get_user_events(id: int, db: Session = Depends(get_db)):
     event_service = EventService(db)
     user_events = event_service.get_user_events(id, db)
-    if not user_events:
-        return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
-    return JSONResponse(status_code=200, content=dict(user_events))
-
-
-@user_router.get('/users/{id}/events', tags=['Users'])
-def get_user_events(id: int, db: Session = Depends(get_db)):
-    event_service = EventService(db)
-    user_events = event_service.get_user_events(id, db)
+    
     if not user_events:
         return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
     
     # Convertir los eventos en una lista de diccionarios
     user_events_list = []
     for event in user_events:
-        user_events_list.append(event.model_dump())
+        event_dict = {
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "start_time": event.start_time.isoformat(),
+            "finish_time": event.finish_time.isoformat(),
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location
+        }
+        user_events_list.append(event_dict)
     
     return JSONResponse(status_code=200, content=user_events_list)
+
+# @user_router.get('/users/{id}/events', tags=['Users'])
+# def get_user_events(id: int, db: Session = Depends(get_db)):
+#     event_service = EventService(db)
+#     user_events = event_service.get_user_events(id, db)
+#     if not user_events:
+#         return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
+    
+#     # Convertir los eventos en una lista de diccionarios
+#     user_events_list = []
+#     for event in user_events:
+#         user_events_list.append(event)
+    
+#     return JSONResponse(status_code=200, content=user_events_list)
 
 @user_router.put("/users/{event_id}/users/{user_id}", tags=["Users"])
 def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)):

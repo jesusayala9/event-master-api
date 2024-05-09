@@ -1,4 +1,5 @@
 from models.event import Event as EventModel
+from models.user import Users as UsersModel
 from models.user import Users
 from schemas.event import Event
 from sqlalchemy.orm import Session
@@ -31,8 +32,8 @@ class EventService():
         event.id       
         event.description = data.description
         event.title = data.title
-        event.startTime = data.startTime
-        event.finishTime = data.finishTime
+        event.start_time = data.start_time
+        event.finish_time = data.finish_time
         event.category = data.category
         event.audience = data.audience
         event.type = data.type
@@ -46,21 +47,26 @@ class EventService():
         return
     
     def get_user_events(self, user_id: int, db: Session):
-        user = db.query(Users).filter(Users.id == user_id).first()
+        user = db.query(UsersModel).filter(UsersModel.id == user_id).first()
         if not user:
             return None
+    # Retorna la lista de eventos a los que asiste el usuario
         return user.events
 
     def get_user_created_events(self, user_id: int, db: Session):        
-        user = db.query(Users).filter(Users.id == user_id).first()
+        user = db.query(UsersModel).filter(UsersModel.id == user_id).first()
         if not user:
             return None
+    # Retorna la lista de eventos creados por el usuario
         return user.created_events
 
     def get_event_attendees(self, event_id: int, db: Session):
-        event = db.query(Event).filter(Event.id == event_id).first()
+        event = db.query(EventModel).filter(EventModel.id == event_id).first()
         if not event:
             return None
         return event.attendees
+    
+   
+    
 
 

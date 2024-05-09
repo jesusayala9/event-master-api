@@ -120,5 +120,5 @@ def get_event_attendees(id: int, db: Session = Depends(get_db)):
     event_service = EventService(db)
     event_attendees = event_service.get_event_attendees(id, db)
     if not event_attendees:
-        return JSONResponse(status_code=404, content={"message": "Event not found or has no attendees."})
+        return JSONResponse(status_code=404, content={"message": "Evento no encontrado o no tiene asistentes"})
     return JSONResponse(status_code=200, content=event_attendees)

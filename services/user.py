@@ -1,6 +1,9 @@
 from typing import List
 from schemas.user import Users
 from models.user import Users as UsersModel
+from sqlalchemy.orm import Session
+from models.event import Event as EventModel
+
 import bcrypt
 
 
@@ -50,6 +53,21 @@ class UserService():
                 self.db.commit()
                 return True
             return False
+        
+        
+    def add_user_to_event(self, user_id: int, event_id: int):
+        user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
+        if not user:
+            return None
+        
+        event = self.db.query(EventModel).filter(EventModel.id == event_id).first()
+        if not event:
+            return None
+
+        event.attendees.append(user)
+        self.db.commit()
+        return event
+    
     
     # def delete_user(self, id:int):
     #     self.db.query(UsersModel).filter(UsersModel.id == id).delete()      

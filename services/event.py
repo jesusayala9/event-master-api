@@ -1,3 +1,5 @@
+from sqlite3 import IntegrityError
+from models.association import association
 from models.event import Event as EventModel
 from models.user import Users as UsersModel
 from models.user import Users
@@ -41,10 +43,18 @@ class EventService():
         self.db.commit()
         return    
     
-    def delete_event(self, id:int):
-        self.db.query(EventModel).filter(EventModel.id == id).delete()      
-        self.db.commit()
-        return
+    # def delete_event(self, id:int):
+    #     self.db.query(EventModel).filter(EventModel.id == id).delete()      
+    #     self.db.commit()
+    #     return
+    
+    def delete_event(self, id: int, db: Session):
+        event_to_delete = db.query(EventModel).filter(EventModel.id == id).first()
+        if event_to_delete:
+            db.delete(event_to_delete)
+            db.commit()
+            return True
+        return False
     
     def get_user_events(self, user_id: int, db: Session):
         user = db.query(Users).filter(Users.id == user_id).first()

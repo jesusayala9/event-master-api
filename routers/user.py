@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter
 from typing import Annotated
@@ -9,8 +10,7 @@ from fastapi.encoders import jsonable_encoder
 from services.event import EventService
 from services.user import UserService
 from schemas.user import Users
-from schemas.user import Users as UsersModel
-from schemas.event import Event
+
 
 
 user_router = APIRouter()
@@ -27,6 +27,29 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
+def format_event_dates(events):
+    for event in events:
+        if isinstance(event.start_time, str):
+            event.start_time = datetime.fromisoformat(event.start_time)
+        if isinstance(event.finish_time, str):
+            event.finish_time = datetime.fromisoformat(event.finish_time)
+        event.start_time = event.start_time.isoformat()
+        event.finish_time = event.finish_time.isoformat()
+        # Construir un diccionario manualmente
+        event_dict = {
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "start_time": event.start_time,
+            "finish_time": event.finish_time,
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location
+        }
+        # Reemplazar el objeto Event con el diccionario correspondiente
+        events[events.index(event)] = event_dict
 
 
 @user_router.get('/users', tags=['Users'], response_model=list[Users], status_code=200)
@@ -79,7 +102,7 @@ def get_user_events(id: int, db: Session = Depends(get_db)):
     user_events = event_service.get_user_events(id, db)
     
     if not user_events:
-        return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
+        return JSONResponse(status_code=404, content={"message": f"Usario con {id} no encontrado o no tiene eventos."})
     
     # Convertir los eventos en una lista de diccionarios
     user_events_list = []
@@ -99,19 +122,7 @@ def get_user_events(id: int, db: Session = Depends(get_db)):
     
     return JSONResponse(status_code=200, content=user_events_list)
 
-# @user_router.get('/users/{id}/events', tags=['Users'])
-# def get_user_events(id: int, db: Session = Depends(get_db)):
-#     event_service = EventService(db)
-#     user_events = event_service.get_user_events(id, db)
-#     if not user_events:
-#         return JSONResponse(status_code=404, content={"message": "User not found or has no events."})
-    
-#     # Convertir los eventos en una lista de diccionarios
-#     user_events_list = []
-#     for event in user_events:
-#         user_events_list.append(event)
-    
-#     return JSONResponse(status_code=200, content=user_events_list)
+
 
 @user_router.put("/users/{event_id}/users/{user_id}", tags=["Users"])
 def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)):
@@ -120,3 +131,6 @@ def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)
     if not event:
         return JSONResponse(status_code=404, content={"message": "Usuario o evento no encontrado"})
     return JSONResponse(status_code=200, content={"message": "Usuario añadido al evento correctamente."})
+
+
+

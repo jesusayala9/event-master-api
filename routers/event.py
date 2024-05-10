@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from typing import Annotated
 from fastapi import Depends,  Query
@@ -108,11 +108,11 @@ def update_Event(id: int, event: Event, db: Session = Depends(get_db)) -> dict:
 
 
 @event_router.delete('/events/{id}', tags=['Events'], response_model=dict, status_code=200)
-def delete_event(id: int, db: Session = Depends(get_db)) -> dict:
+def delete_event(id: int, db: Session = Depends(get_db)) -> JSONResponse:
     result = db.query(EventModel).filter(EventModel.id == id).first()
     if not result:
         return JSONResponse(status_code=404, content={'message': f"Eventos con ID {id} No encontrado"})
-    EventService(db).delete_event(id)
+    EventService(db).delete_event(id, db)  # Asegúrate de pasar 'db' aquí
     return JSONResponse(status_code=200, content={'message': f'Evento con ID {id} ha sido eliminado'})
 
 @event_router.get('/events/{id}/attendees', tags=['Events'])
@@ -122,3 +122,5 @@ def get_event_attendees(id: int, db: Session = Depends(get_db)):
     if not event_attendees:
         return JSONResponse(status_code=404, content={"message": "Evento no encontrado o no tiene asistentes"})
     return JSONResponse(status_code=200, content=event_attendees)
+
+

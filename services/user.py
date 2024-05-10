@@ -69,8 +69,8 @@ class UserService():
         return event
     
     
-    # def delete_user(self, id:int):
-    #     self.db.query(UsersModel).filter(UsersModel.id == id).delete()      
-    #     self.db.commit()
-    #     return
+#     # def delete_user(self, id:int):
+#     #     self.db.query(UsersModel).filter(UsersModel.id == id).delete()      
+#     #     self.db.commit()
+#     #     return
 

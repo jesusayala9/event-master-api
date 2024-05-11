@@ -1,5 +1,3 @@
-from sqlite3 import IntegrityError
-from models.association import association
 from models.event import Event as EventModel
 from models.user import Users as UsersModel
 from models.user import Users
@@ -31,7 +29,6 @@ class EventService():
     
     def update_event(self, id:int, data:Event):
         event = self.db.query(EventModel).filter(EventModel.id == id).first() 
-        event.id       
         event.description = data.description
         event.title = data.title
         event.start_time = data.start_time

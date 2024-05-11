@@ -1,7 +1,5 @@
-from typing import List
 from schemas.user import Users
 from models.user import Users as UsersModel
-from sqlalchemy.orm import Session
 from models.event import Event as EventModel
 
 import bcrypt

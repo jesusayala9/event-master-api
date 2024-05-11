@@ -10,7 +10,7 @@ class EventType(str, Enum):
 
 
 class Event(BaseModel):
-    id: int
+    
     title: str = Field(default='Nuevo Evento', max_length=20)
     description: str = Field(default='sin Descripcion', max_length=50)
     start_time: datetime = Field(datetime(2024, 1, 4, 10, 0))
@@ -23,7 +23,7 @@ class Event(BaseModel):
 
     def model_dump(self):
         return {
-            "id": self.id,
+            
             "title": self.title,
             "description": self.description,
             "start_time": self.start_time,
@@ -39,7 +39,7 @@ class Event(BaseModel):
     class Config:
         schema_extra = {
             'example': {
-                'id': 1,
+                
                 'title': 'Nuevo Evento',
                 'description': 'Sin descripcion',
                 'start_time': datetime(2024, 1, 4, 10, 0),

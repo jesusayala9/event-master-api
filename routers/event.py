@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from datetime import datetime
 from typing import Annotated
 from fastapi import Depends,  Query
@@ -9,7 +9,7 @@ from config.database import SessionLocal
 from fastapi.encoders import jsonable_encoder
 from services.event import EventService
 from schemas.event import Event
-# from middlewares.jwt_bearer import JWTBearer
+
 
 event_router = APIRouter()
 

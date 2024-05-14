@@ -17,6 +17,10 @@ class EventService():
         result = self.db.query(EventModel).filter(EventModel.id == id).first()
         return result
     
+    def get_event_by_title(self, title):
+        result = self.db.query(EventModel).filter(EventModel.title == title).all()
+        return result
+    
     def get_event_by_category(self, category):
         result = self.db.query(EventModel).filter(EventModel.category == category).all()
         return result

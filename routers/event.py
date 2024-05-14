@@ -76,6 +76,18 @@ def get_events_by_Category(category: str = Query(min_length=5, max_length=15), d
         return JSONResponse(status_code=200, content=jsonable_encoder(result))
     except Exception as e:
         return JSONResponse(status_code=500, content={'message': str(e)})
+    
+@event_router.get('/events/by-title/', tags=['Events'], response_model=list[Event])
+def get_events_by_title(title: str = Query(..., min_length=1), db: Session = Depends(get_db)) -> list[Event]:
+    try:
+        result = EventService(db).get_event_by_title(title)
+        if not result:
+            return JSONResponse(status_code=404, content={'message': 'No se encontraron eventos con el título especificado'})
+        format_event_dates(result)
+        return JSONResponse(status_code=200, content=jsonable_encoder(result))
+    except Exception as e:
+        return JSONResponse(status_code=500, content={'message': str(e)})
+
 
 
 # metodos POST

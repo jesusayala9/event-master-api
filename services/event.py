@@ -25,11 +25,43 @@ class EventService():
         result = self.db.query(EventModel).filter(EventModel.category == category).all()
         return result
     
+    def get_event_by_type(self, type):
+        result = self.db.query(EventModel).filter(EventModel.type == type).all()
+        return result
+    
+    # def get_events_by_category_and_title(self, category: str, title: str):
+    #     # Buscar eventos por categoría
+    #     events_by_category = self.db.query(EventModel).filter(EventModel.category == category).all()
+    #     # Buscar eventos por título
+    #     events_by_title = self.db.query(EventModel).filter(EventModel.title == title).all()
+    #     # Combinar los resultados de ambas consultas
+    #     combined_events = events_by_category + events_by_title
+    #     # Eliminar duplicados de la lista combinada
+    #     unique_events = list(set(combined_events))
+    #     return unique_events
+    
+    def get_events_by_category_and_title_and_type(self, category: str, title: str, event_type: str):
+        # Buscar eventos por categoría
+        events_by_category = self.db.query(EventModel).filter(EventModel.category.ilike(f"%{category}%")).all()
+        # Buscar eventos por título
+        events_by_title = self.db.query(EventModel).filter(EventModel.title.ilike(f"%{title}%")).all()
+        # Buscar eventos por tipo
+        events_by_type = self.db.query(EventModel).filter(EventModel.type.ilike(f"%{event_type}%")).all()
+        # Combinar los resultados de las tres consultas
+        combined_events = events_by_category + events_by_title + events_by_type
+        # Eliminar duplicados de la lista combinada
+        unique_events = list(set(combined_events))
+        return unique_events
+    
     def create_event(self, event:Event):
         new_event = EventModel(**event.model_dump())
         self.db.add(new_event)
-        self.db.commit()
-        return
+        try:
+            self.db.commit()
+            return True  # Indica que la creación del evento fue exitosa
+        except Exception as e:
+            self.db.rollback()
+            return False 
     
     def update_event(self, id:int, data:Event):
         event = self.db.query(EventModel).filter(EventModel.id == id).first() 

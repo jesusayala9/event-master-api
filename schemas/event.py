@@ -11,11 +11,11 @@ class EventType(str, Enum):
 
 class Event(BaseModel):
     
-    title: str = Field(default='Nuevo Evento', max_length=20)
-    description: str = Field(default='sin Descripcion', max_length=50)
+    title: str = Field(default='Nuevo Evento', max_length=200)
+    description: str = Field(default='sin Descripcion', max_length=200)
     start_time: datetime = Field(datetime(2024, 1, 4, 10, 0))
     finish_time: datetime = Field(datetime(2024, 1, 4, 11, 0))
-    category: str = Field(default='Sin Categoria', max_length=20)
+    category: str = Field(default='Sin Categoria', max_length=50)
     audience: int = Field(default=0)
     type: EventType = Field(default=EventType.presencial)
     location: str = Field(default='Sin Locacion')

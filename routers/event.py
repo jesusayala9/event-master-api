@@ -87,23 +87,77 @@ def get_events_by_title(title: str = Query(..., min_length=1), db: Session = Dep
         return JSONResponse(status_code=200, content=jsonable_encoder(result))
     except Exception as e:
         return JSONResponse(status_code=500, content={'message': str(e)})
+    
+# @event_router.get('/events/search/', tags=['Events'], response_model=list[Event])
+# def search_events(Title_or_Category: str = Query(...), db: Session = Depends(get_db)):
+#     # Verificar si el parámetro es una categoría
+#     category_result = EventService(db).get_event_by_category(Title_or_Category)
+#     if category_result:
+#         return category_result
+
+#     # Si no es una categoría, entonces asumimos que es un título de evento
+#     title_result = EventService(db).get_event_by_title(Title_or_Category)
+#     if title_result:
+#         return title_result
+
+#     # Si no se encontraron eventos por categoría ni por título, retornar un mensaje de error
+#     return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category}'"})
+
+@event_router.get('/events/search/', tags=['Events'], response_model=list[Event])
+def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Depends(get_db)):
+    # Verificar si el parámetro es una categoría, un título de evento o un tipo de evento
+    events = EventService(db).get_events_by_category_and_title_and_type(Title_or_Category_or_Type, Title_or_Category_or_Type, Title_or_Category_or_Type)
+    if events:
+        return events
+    else:
+        return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category_or_Type}'"})
+    
+# def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Depends(get_db)):
+#     # Verificar si el parámetro es una categoría
+#     category_result = EventService(db).get_event_by_category(Title_or_Category_or_Type)
+#     if category_result:
+#         return category_result
+
+#     # Verificar si el parámetro es un título de evento
+#     title_result = EventService(db).get_event_by_title(Title_or_Category_or_Type)
+#     if title_result:
+#         return title_result
+
+#     # Verificar si el parámetro es un tipo de evento
+#     type_result = EventService(db).get_event_by_type(Title_or_Category_or_Type)
+#     if type_result:
+#         return type_result
+
+#     # Si no se encontraron eventos por categoría, título ni tipo, retornar un mensaje de error
+#     return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category_or_Type}'"})
 
 
 
 # metodos POST
 
 
+# @event_router.post('/events', tags=['Events'], response_model=dict, status_code=201)
+# def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
+#     try:
+#         EventService(db).create_event(event)
+#         return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+#     except Exception as e:
+#         db.rollback()
+#         return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
+#     finally:
+#         db.close()
+#         print("Este es el model_dump", event.model_dump())
+
 @event_router.post('/events', tags=['Events'], response_model=dict, status_code=201)
 def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
     try:
-        EventService(db).create_event(event)
-        return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+        success = EventService(db).create_event(event)
+        if success:
+            return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
+        else:
+            return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
     except Exception as e:
-        db.rollback()
         return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
-    finally:
-        db.close()
-        print("Este es el model_dump", event.model_dump())
 
 # metodo PUT
 

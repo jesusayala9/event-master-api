@@ -20,6 +20,8 @@ class Users(BaseModel):
             "events": self.events,
             "created_events": self.created_events,
         }
+        
+    
 
     class Config:
         schema_extra = {

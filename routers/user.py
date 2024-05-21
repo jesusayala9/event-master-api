@@ -12,7 +12,6 @@ from services.user import UserService
 from schemas.user import Users
 
 
-
 user_router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -27,6 +26,7 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
+
 
 def format_event_dates(events):
     for event in events:
@@ -66,6 +66,45 @@ def get_user(id: int, db: Session = Depends(get_db)) -> Users:
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 
+@user_router.get('/users/{id}/created-events', tags=['Users'])
+def get_user_created_events(id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    created_events = user_service.get_user_created_events(id)
+
+    if not created_events:
+        return JSONResponse(status_code=404, content={"message": f"Usuario con ID {id} no encontrado o no tiene eventos creados."})
+
+    # Convertir los eventos creados en una lista de diccionarios
+    created_events_list = []
+    for event in created_events:
+        event_dict = {
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "start_time": event.start_time.isoformat(),
+            "finish_time": event.finish_time.isoformat(),
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location,
+            "creator_id": event.creator_id,
+        }
+        created_events_list.append(event_dict)
+
+    return JSONResponse(status_code=200, content=created_events_list)
+
+
+@user_router.get('/users/{id}/events', tags=['Users'])
+def get_user_events(id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    user_events = user_service.get_user_events(id)
+
+    if not user_events:
+        return JSONResponse(status_code=404, content={"message": f"Usuario con ID {id} no encontrado o no tiene eventos."})
+
+    return JSONResponse(status_code=200, content=user_events)
+
+
 @user_router.post('/users', tags=['Users'], response_model=dict, status_code=201)
 def create_user(user: Users, db: Session = Depends(get_db)) -> dict:
     try:
@@ -88,49 +127,23 @@ def update_user(id: int, event: Users, db: Session = Depends(get_db)) -> dict:
     return JSONResponse(status_code=200, content={'message': 'Se ha modificado el evento'})
 
 
+@user_router.put("/users/{event_id}/users/{user_id}", tags=["Users"])
+def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    response = user_service.add_user_to_event(user_id, event_id)
+
+    # Verificar si la respuesta es un diccionario y contiene un mensaje de éxito o error
+    if isinstance(response, dict) and "message" in response:
+        # Si contiene un mensaje, significa que ocurrió un error o el usuario ya está asociado al evento
+        return JSONResponse(status_code=400, content={"message": response["message"]})
+    else:
+        # Si no contiene un mensaje, significa que la operación fue exitosa
+        return JSONResponse(status_code=200, content={"message": "Usuario añadido al evento correctamente."})
+
+
 @user_router.delete('/users/{id}', tags=['Users'], response_model=dict, status_code=200)
 def delete_user(id: int, db: Session = Depends(get_db)) -> dict:
     user_service = UserService(db)
     if not user_service.delete_user(id):
         return JSONResponse(status_code=404, content={"message": f"Usuario con ID {id} no encontrado"})
     return JSONResponse(status_code=200, content={"message": f"Usuario con ID {id} ha sido eliminado"})
-
-
-@user_router.get('/users/{id}/events', tags=['Users'])
-def get_user_events(id: int, db: Session = Depends(get_db)):
-    event_service = EventService(db)
-    user_events = event_service.get_user_events(id, db)
-    
-    if not user_events:
-        return JSONResponse(status_code=404, content={"message": f"Usario con {id} no encontrado o no tiene eventos."})
-    
-    # Convertir los eventos en una lista de diccionarios
-    user_events_list = []
-    for event in user_events:
-        event_dict = {
-            "id": event.id,
-            "title": event.title,
-            "description": event.description,
-            "start_time": event.start_time.isoformat(),
-            "finish_time": event.finish_time.isoformat(),
-            "category": event.category,
-            "audience": event.audience,
-            "type": event.type,
-            "location": event.location
-        }
-        user_events_list.append(event_dict)
-    
-    return JSONResponse(status_code=200, content=user_events_list)
-
-
-
-@user_router.put("/users/{event_id}/users/{user_id}", tags=["Users"])
-def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)):
-    user_service = UserService(db)
-    event = user_service.add_user_to_event(user_id, event_id)
-    if not event:
-        return JSONResponse(status_code=404, content={"message": "Usuario o evento no encontrado"})
-    return JSONResponse(status_code=200, content={"message": "Usuario añadido al evento correctamente."})
-
-
-

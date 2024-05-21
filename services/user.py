@@ -1,8 +1,10 @@
 from schemas.user import Users
 from models.user import Users as UsersModel
 from models.event import Event as EventModel
+from sqlalchemy.orm import Session
+from models.association import association
 
-import bcrypt
+
 
 
 
@@ -14,8 +16,7 @@ class UserService():
     def get_user_by_username(self, username: str):
         return self.db.query(UsersModel).filter(UsersModel.username == username).first()
     
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+   
 
     def get_users(self):
         result = self.db.query(UsersModel).all()
@@ -53,22 +54,96 @@ class UserService():
             return False
         
         
+    # def add_user_to_event(self, user_id: int, event_id: int):
+    #     user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
+    #     if not user:
+    #         return None
+
+    #     event = self.db.query(EventModel).filter(EventModel.id == event_id).first()
+    #     if not event:
+    #         return None
+
+    #     # Verificar si la asociación ya existe
+    #     if event in user.events:
+    #         return {"message": "El usuario ya está asociado a este evento"}
+
+    #     user.events.append(event)
+    #     self.db.commit()
+    #     return event
+    
     def add_user_to_event(self, user_id: int, event_id: int):
         user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
         if not user:
-            return None
-        
+            return {"message": "Usuario no encontrado"}
+
         event = self.db.query(EventModel).filter(EventModel.id == event_id).first()
         if not event:
-            return None
+            return {"message": "Evento no encontrado"}
 
-        event.attendees.append(user)
+        # Verificar si la asociación ya existe usando la tabla de asociación
+        existing_association = self.db.query(association).filter_by(user_id=user_id, event_id=event_id).first()
+        if existing_association:
+            return {"message": "El usuario ya está asociado a este evento"}
+
+        # Asociar el usuario al evento
+        user.events.append(event)
+
+        # Incrementar la audiencia del evento
+        if event.audience is None:
+            event.audience = 1
+        else:
+            event.audience += 1
+
         self.db.commit()
         return event
-    
-    
-#     # def delete_user(self, id:int):
-#     #     self.db.query(UsersModel).filter(UsersModel.id == id).delete()      
-#     #     self.db.commit()
-#     #     return
 
+
+    
+    def get_user_events(self, user_id: int):
+        user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
+        if not user:
+            return None
+
+        # Serializar eventos creados por el usuario
+        created_events = [{
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "start_time": event.start_time.isoformat(),
+            "finish_time": event.finish_time.isoformat(),
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location,
+            "attendees": [attendee.id for attendee in event.attendees]
+        } for event in user.created_events]
+
+        # Serializar eventos a los que el usuario asistirá
+        attending_events = [{
+            "id": event.id,
+            "title": event.title,
+            "description": event.description,
+            "start_time": event.start_time.isoformat(),
+            "finish_time": event.finish_time.isoformat(),
+            "category": event.category,
+            "audience": event.audience,
+            "type": event.type,
+            "location": event.location,
+            "attendees": [attendee.id for attendee in event.attendees]
+        } for event in user.events]
+
+        # Combinar ambos arrays
+        all_events = created_events + attending_events
+
+        # Eliminar duplicados (en caso de que un evento pueda estar en ambas listas)
+        unique_events = {event['id']: event for event in all_events}.values()
+
+        return list(unique_events)
+
+
+    def get_user_created_events(self, user_id: int):
+        user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
+        if not user:
+            return None
+        return user.created_events
+    

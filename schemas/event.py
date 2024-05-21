@@ -19,6 +19,7 @@ class Event(BaseModel):
     audience: int = Field(default=0)
     type: EventType = Field(default=EventType.presencial)
     location: str = Field(default='Sin Locacion')
+    creator_id: int 
     
 
     def model_dump(self):
@@ -32,6 +33,7 @@ class Event(BaseModel):
             "audience": self.audience,
             'type': self.type,
             'location': self.location,
+            'creator_id': self.creator_id, 
             
 
         }
@@ -47,8 +49,7 @@ class Event(BaseModel):
                 'category': 'students',
                 'audience': 0,
                 'type': EventType.presencial,
-                'location': 'Sin Locacion',
-                
+                'location': 'Sin Locacion',               
 
             }
         }

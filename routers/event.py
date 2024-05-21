@@ -44,12 +44,13 @@ def format_event_dates(events):
             "category": event.category,
             "audience": event.audience,
             "type": event.type,
-            "location": event.location
+            "location": event.location,
+            "creator_id": event.creator_id
         }
         # Reemplazar el objeto Event con el diccionario correspondiente
         events[events.index(event)] = event_dict
 
-
+#
 @event_router.get('/events', tags=['Events'], response_model=list[Event], status_code=200 )
 def get_events(db: Session = Depends(get_db)) -> list[Event]:
     result = EventService(db).get_events()
@@ -88,20 +89,7 @@ def get_events_by_title(title: str = Query(..., min_length=1), db: Session = Dep
     except Exception as e:
         return JSONResponse(status_code=500, content={'message': str(e)})
     
-# @event_router.get('/events/search/', tags=['Events'], response_model=list[Event])
-# def search_events(Title_or_Category: str = Query(...), db: Session = Depends(get_db)):
-#     # Verificar si el parámetro es una categoría
-#     category_result = EventService(db).get_event_by_category(Title_or_Category)
-#     if category_result:
-#         return category_result
 
-#     # Si no es una categoría, entonces asumimos que es un título de evento
-#     title_result = EventService(db).get_event_by_title(Title_or_Category)
-#     if title_result:
-#         return title_result
-
-#     # Si no se encontraron eventos por categoría ni por título, retornar un mensaje de error
-#     return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category}'"})
 
 @event_router.get('/events/search/', tags=['Events'], response_model=list[Event])
 def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Depends(get_db)):
@@ -112,52 +100,31 @@ def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Dep
     else:
         return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category_or_Type}'"})
     
-# def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Depends(get_db)):
-#     # Verificar si el parámetro es una categoría
-#     category_result = EventService(db).get_event_by_category(Title_or_Category_or_Type)
-#     if category_result:
-#         return category_result
 
-#     # Verificar si el parámetro es un título de evento
-#     title_result = EventService(db).get_event_by_title(Title_or_Category_or_Type)
-#     if title_result:
-#         return title_result
-
-#     # Verificar si el parámetro es un tipo de evento
-#     type_result = EventService(db).get_event_by_type(Title_or_Category_or_Type)
-#     if type_result:
-#         return type_result
-
-#     # Si no se encontraron eventos por categoría, título ni tipo, retornar un mensaje de error
-#     return JSONResponse(status_code=404, content={'message': f"No se encontraron eventos para '{Title_or_Category_or_Type}'"})
-
-
-
-# metodos POST
-
-
-# @event_router.post('/events', tags=['Events'], response_model=dict, status_code=201)
-# def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
-#     try:
-#         EventService(db).create_event(event)
-#         return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
-#     except Exception as e:
-#         db.rollback()
-#         return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
-#     finally:
-#         db.close()
-#         print("Este es el model_dump", event.model_dump())
-
+# metodo POST
 @event_router.post('/events', tags=['Events'], response_model=dict, status_code=201)
 def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
     try:
-        success = EventService(db).create_event(event)
+        # Print para verificar los datos del evento recibido
+        print("Datos del evento recibido en el endpoint:", event)
+
+        # Convertir el evento a un diccionario y añadir el creator_id
+        event_data = event.model_dump()
+        event_data['creator_id'] = event.creator_id
+        print("Datos del evento con creator_id:", event_data)
+
+        # Crear el evento utilizando el servicio EventService
+        success = EventService(db).create_event(event_data)
+        
         if success:
             return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
         else:
             return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
     except Exception as e:
+        print(f"Error en el endpoint al registrar el evento: {e}")
         return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
+
+
 
 # metodo PUT
 
@@ -184,9 +151,9 @@ def delete_event(id: int, db: Session = Depends(get_db)) -> JSONResponse:
 @event_router.get('/events/{id}/attendees', tags=['Events'])
 def get_event_attendees(id: int, db: Session = Depends(get_db)):
     event_service = EventService(db)
-    event_attendees = event_service.get_event_attendees(id, db)
+    event_attendees = event_service.get_event_attendees(id)
     if not event_attendees:
         return JSONResponse(status_code=404, content={"message": "Evento no encontrado o no tiene asistentes"})
-    return JSONResponse(status_code=200, content=event_attendees)
+    return JSONResponse(status_code=200, content=jsonable_encoder(event_attendees))
 
 

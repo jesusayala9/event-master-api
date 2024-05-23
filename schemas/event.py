@@ -15,8 +15,7 @@ class Event(BaseModel):
     description: str = Field(default='sin Descripcion', max_length=200)
     start_time: datetime = Field(datetime(2024, 1, 4, 10, 0))
     finish_time: datetime = Field(datetime(2024, 1, 4, 11, 0))
-    category: str = Field(default='Sin Categoria', max_length=50)
-    audience: int = Field(default=0)
+    category: str = Field(default='Sin Categoria', max_length=50)    
     type: EventType = Field(default=EventType.presencial)
     location: str = Field(default='Sin Locacion')
     creator_id: int 
@@ -29,8 +28,7 @@ class Event(BaseModel):
             "description": self.description,
             "start_time": self.start_time,
             "finish_time": self.finish_time,
-            "category": self.category,
-            "audience": self.audience,
+            "category": self.category,            
             'type': self.type,
             'location': self.location,
             'creator_id': self.creator_id, 
@@ -40,16 +38,20 @@ class Event(BaseModel):
 
     class Config:
         schema_extra = {
-            'example': {
-                
+            'example': {                
                 'title': 'Nuevo Evento',
                 'description': 'Sin descripcion',
                 'start_time': datetime(2024, 1, 4, 10, 0),
                 'finish_time': datetime(2024, 1, 4, 11, 0),
-                'category': 'students',
-                'audience': 0,
+                'category': 'students',                
                 'type': EventType.presencial,
                 'location': 'Sin Locacion',               
 
             }
         }
+        
+class EventResponse(Event):
+    id: int
+
+    class Config:
+        orm_mode = True

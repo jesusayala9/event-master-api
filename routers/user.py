@@ -105,16 +105,16 @@ def get_user_events(id: int, db: Session = Depends(get_db)):
     return JSONResponse(status_code=200, content=user_events)
 
 
-@user_router.post('/users', tags=['Users'], response_model=dict, status_code=201)
-def create_user(user: Users, db: Session = Depends(get_db)) -> dict:
-    try:
-        UserService(db).create_user(user)
-        return JSONResponse(status_code=201, content={'message': 'Se ha registrado el usuario'})
-    except Exception as e:
-        db.rollback()
-        return JSONResponse(status_code=500, content={'message': 'Error al registrar el usuario'})
-    finally:
-        db.close()
+# @user_router.post('/users', tags=['Users'], response_model=dict, status_code=201)
+# def create_user(user: Users, db: Session = Depends(get_db)) -> dict:
+#     try:
+#         UserService(db).create_user(user)
+#         return JSONResponse(status_code=201, content={'message': 'Se ha registrado el usuario'})
+#     except Exception as e:
+#         db.rollback()
+#         return JSONResponse(status_code=500, content={'message': 'Error al registrar el usuario'})
+#     finally:
+#         db.close()
         # print("Este es el model_dump", user.model_dump())
 
 

@@ -54,22 +54,7 @@ class UserService():
             return False
         
         
-    # def add_user_to_event(self, user_id: int, event_id: int):
-    #     user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
-    #     if not user:
-    #         return None
-
-    #     event = self.db.query(EventModel).filter(EventModel.id == event_id).first()
-    #     if not event:
-    #         return None
-
-    #     # Verificar si la asociación ya existe
-    #     if event in user.events:
-    #         return {"message": "El usuario ya está asociado a este evento"}
-
-    #     user.events.append(event)
-    #     self.db.commit()
-    #     return event
+  
     
     def add_user_to_event(self, user_id: int, event_id: int):
         user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()

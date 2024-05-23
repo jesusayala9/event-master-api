@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 from models.event import Event as EventModel
 from config.database import SessionLocal
 from fastapi.encoders import jsonable_encoder
+from models.user import Users
+from services.auth import get_current_user
 from services.event import EventService
-from schemas.event import Event
+from schemas.event import Event, EventResponse
 
 
 event_router = APIRouter()
@@ -102,27 +104,27 @@ def search_events(Title_or_Category_or_Type: str = Query(...), db: Session = Dep
     
 
 # metodo POST
-@event_router.post('/events', tags=['Events'], response_model=dict, status_code=201)
-def create_event(event: Event, db: Session = Depends(get_db)) -> dict:
+@event_router.post('/events', tags=['Events'], response_model=EventResponse, status_code=201)
+def create_event(event: Event, current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
     try:
-        # Print para verificar los datos del evento recibido
-        print("Datos del evento recibido en el endpoint:", event)
-
-        # Convertir el evento a un diccionario y añadir el creator_id
+        print("Datos recibidos para crear el evento:", event.model_dump())
+        
+        creator_id = current_user.id
         event_data = event.model_dump()
-        event_data['creator_id'] = event.creator_id
-        print("Datos del evento con creator_id:", event_data)
+        event_data['creator_id'] = creator_id
+        print("Datos del evento a registrar:", event_data)
 
-        # Crear el evento utilizando el servicio EventService
         success = EventService(db).create_event(event_data)
         
         if success:
+            print("Evento registrado con éxito")
             return JSONResponse(status_code=201, content={'message': 'Se ha registrado el evento'})
         else:
+            print("Error al registrar el evento en la capa de servicio")
             return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
     except Exception as e:
         print(f"Error en el endpoint al registrar el evento: {e}")
-        return JSONResponse(status_code=500, content={'message': 'Error al registrar el evento'})
+        return JSONResponse(status_code=500, content={'message': f'Error al registrar el evento: {str(e)}'})
 
 
 

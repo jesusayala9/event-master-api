@@ -59,23 +59,17 @@ class EventService():
         unique_events = list(set(combined_events))
         return unique_events
     
-    def create_event(self, event_data):
+    def create_event(self, event_data: dict) -> bool:
         try:
-            # Print para verificar los datos del evento recibido
-            print("Datos del evento recibido para crear:", event_data)
-
-            # Crear instancia del modelo de evento
             new_event = EventModel(**event_data)
-            print("Nueva instancia de EventModel creada:", new_event)
-
             self.db.add(new_event)
             self.db.commit()
-
-            print("Evento creado exitosamente")
-            return True  # Indica que la creación del evento fue exitosa
+            self.db.refresh(new_event)
+            print("Evento creado en la base de datos:", new_event)
+            return True
         except Exception as e:
+            print(f"Error al crear el evento en la base de datos: {e}")
             self.db.rollback()
-            print(f"Error al crear el evento: {e}")
             return False
 
     def update_event(self, id: int, data: Event):

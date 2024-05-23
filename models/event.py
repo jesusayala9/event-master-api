@@ -15,7 +15,7 @@ class Event(Base):
     start_time = Column(DateTime, nullable=False)
     finish_time = Column(DateTime, nullable=False)
     category = Column(String(255))
-    audience = Column(Integer)
+    audience = Column(Integer, default=0)
     type = Column(String(255))
     location = Column(String(255))    
     # Relación muchos a muchos con usuarios

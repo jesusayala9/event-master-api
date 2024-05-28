@@ -127,7 +127,7 @@ def update_user(id: int, event: Users, db: Session = Depends(get_db)) -> dict:
     return JSONResponse(status_code=200, content={'message': 'Se ha modificado el evento'})
 
 
-@user_router.put("/users/{event_id}/users/{user_id}", tags=["Users"])
+@user_router.put("/users/{user_id}/event/{event_id}", tags=["Users"])
 def add_user_to_event(event_id: int, user_id: int, db: Session = Depends(get_db)):
     user_service = UserService(db)
     response = user_service.add_user_to_event(user_id, event_id)
@@ -147,3 +147,15 @@ def delete_user(id: int, db: Session = Depends(get_db)) -> dict:
     if not user_service.delete_user(id):
         return JSONResponse(status_code=404, content={"message": f"Usuario con ID {id} no encontrado"})
     return JSONResponse(status_code=200, content={"message": f"Usuario con ID {id} ha sido eliminado"})
+
+@user_router.delete("/users/{user_id}/events/{event_id}", tags=['Users'], response_model=dict)
+def delete_user_event(user_id: int, event_id: int, db: Session = Depends(get_db)):
+    user_service = UserService(db)
+    result = user_service.delete_user_event(user_id, event_id)
+    
+    if result.get("message") == "Usuario no encontrado":
+        return JSONResponse(status_code=404, content={"detail": "Usuario no encontrado"})
+    elif result.get("message") == "Evento no encontrado":
+        return JSONResponse(status_code=404, content={"detail": "Evento no encontrado"})
+    
+    return JSONResponse(status_code=200, content=result)

@@ -22,6 +22,7 @@ class EventService():
 
     def get_events(self):
         result = self.db.query(EventModel).all()
+        
         return result
 
     def get_event(self, id):

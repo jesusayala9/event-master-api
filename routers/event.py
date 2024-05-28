@@ -56,7 +56,7 @@ def format_event_dates(events):
 @event_router.get('/events', tags=['Events'], response_model=list[Event], status_code=200 )
 def get_events(db: Session = Depends(get_db)) -> list[Event]:
     result = EventService(db).get_events()
-    format_event_dates(result)
+    format_event_dates(result)    
     return JSONResponse(status_code=200, content=jsonable_encoder(result))
 
 

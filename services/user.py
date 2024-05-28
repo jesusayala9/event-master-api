@@ -132,3 +132,23 @@ class UserService():
             return None
         return user.created_events
     
+    def delete_user_event(self, user_id: int, event_id: int):
+        user = self.db.query(UsersModel).filter(UsersModel.id == user_id).first()
+        if not user:
+            return {"message": "Usuario no encontrado"}
+        
+        event = self.db.query(EventModel).filter(EventModel.id == event_id).first()
+        if not event:
+            return {"message": "Evento no encontrado"}
+
+        # Si el evento es creado por el usuario, eliminarlo
+        if event in user.created_events:
+            self.db.delete(event)
+
+        # Si el evento está en la lista de eventos del usuario, desasociarlo
+        if event in user.events:
+            user.events.remove(event)
+
+        # Guardar los cambios en la base de datos
+        self.db.commit()
+        return {"message": "Evento eliminado correctamente o usuario desasociado del evento"}

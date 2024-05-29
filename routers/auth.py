@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,7 +8,8 @@ from schemas.user_created import UserCreate
 from services.auth import create_access_token, get_password_hash, authenticate_user, get_current_active_user, get_db
 from schemas.auth import User_Auth
 from schemas.user import Users 
-from models.user import Users as UsersModel  
+from models.user import Users as UsersModel
+
 
 auth_router = APIRouter()
 
@@ -24,6 +25,10 @@ class AuthController:
         db.commit()
         db.refresh(db_user)
         return JSONResponse(content={"message": "User registered successfully"})
+    
+    
+    
+    
 
     @auth_router.post("/token", tags=['Auth'], response_model=Token)
     def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):

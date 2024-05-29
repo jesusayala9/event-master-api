@@ -62,6 +62,7 @@ class EventService():
     
     def create_event(self, event_data: dict) -> bool:
         try:
+            print("Datos recibidos para crear el evento:", event_data)
             new_event = EventModel(**event_data)
             self.db.add(new_event)
             self.db.commit()
@@ -75,14 +76,14 @@ class EventService():
 
     def update_event(self, id: int, data: Event):
         event = self.db.query(EventModel).filter(EventModel.id == id).first()
-        event.description = data.description
         event.title = data.title
+        event.description = data.description        
         event.start_time = data.start_time
         event.finish_time = data.finish_time
-        event.category = data.category
-        event.audience = data.audience
+        event.category = data.category        
         event.type = data.type
         event.location = data.location
+        event.creator_id = data.creator_id
         self.db.commit()
         return
 

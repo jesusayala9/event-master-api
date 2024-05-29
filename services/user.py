@@ -100,6 +100,7 @@ class UserService():
             "audience": event.audience,
             "type": event.type,
             "location": event.location,
+            "creator_id": event.creator_id,
             "attendees": [attendee.id for attendee in event.attendees]
         } for event in user.created_events]
 

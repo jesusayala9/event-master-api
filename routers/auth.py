@@ -11,6 +11,7 @@ from schemas.auth import User_Auth
 from schemas.user import Users 
 from models.user import Users as UsersModel
 from config.config_mail import settings
+import os
 
 
 auth_router = APIRouter()
@@ -49,12 +50,19 @@ class AuthController:
             db.add(db_user)
             db.commit()
             db.refresh(db_user)
-        
+
+            # Load the HTML template and replace {{ username }} with the user's username
+            current_dir = os.path.dirname(__file__)
+            template_path = os.path.join(current_dir, '..', 'templates', 'welcome.html')
+            with open(template_path, 'r') as file:
+                template_content = file.read()
+            email_body = template_content.replace('{{ username }}', user.username)
+
             # Send confirmation email
             message = MessageSchema(
                 subject="Welcome to Event Master",
                 recipients=[user.email],
-                body=f"Hello {user.username}, welcome to Event Master!",
+                body=email_body,
                 subtype="html"
             )
 
@@ -71,6 +79,48 @@ class AuthController:
             raise http_exc
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"An error occurred during registration: {e}")
+        
+    # @auth_router.post("/register", tags=['Auth'], response_model=Users)
+    # async def register_user(user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    #     try:
+    #         # Check if username is already registered
+    #         db_user = db.query(UsersModel).filter(UsersModel.username == user.username).first()
+    #         if db_user:
+    #             raise HTTPException(status_code=400, detail="Username already registered")
+
+    #         # Check if email is already registered
+    #         db_user = db.query(UsersModel).filter(UsersModel.email == user.email).first()
+    #         if db_user:
+    #             raise HTTPException(status_code=400, detail="Email already registered")
+
+    #         # Hash the password and create new user record
+    #         hashed_password = get_password_hash(user.password)
+    #         db_user = UsersModel(username=user.username, email=user.email, hashed_password=hashed_password)
+    #         db.add(db_user)
+    #         db.commit()
+    #         db.refresh(db_user)
+        
+    #         # Send confirmation email
+    #         message = MessageSchema(
+    #             subject="Welcome to Event Master",
+    #             recipients=[user.email],
+    #             body=f"Hello {user.username}, welcome to Event Master!",
+    #             subtype="html"
+    #         )
+
+    #         try:
+    #             fm = FastMail(conf)
+    #             background_tasks.add_task(fm.send_message, message)
+    #             print(f"Confirmation email sent to: {user.email}")
+    #         except Exception as e:
+    #             print(f"Failed to send confirmation email to: {user.email}. Error: {e}")
+
+    #         return JSONResponse(content={"message": "User registered successfully"})
+
+    #     except HTTPException as http_exc:
+    #         raise http_exc
+    #     except Exception as e:
+    #         raise HTTPException(status_code=500, detail=f"An error occurred during registration: {e}")
     
     
     

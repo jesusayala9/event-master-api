@@ -8,10 +8,13 @@ from models.association import association
 
 
 
+
 class UserService():
     def __init__(self, db) -> None:
         self.db = db
         
+    
+            
         
     def get_user_by_username(self, username: str):
         return self.db.query(UsersModel).filter(UsersModel.username == username).first()
@@ -81,7 +84,6 @@ class UserService():
 
         self.db.commit()
         return event
-
 
     
     def get_user_events(self, user_id: int):

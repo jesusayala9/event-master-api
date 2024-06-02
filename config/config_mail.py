@@ -1,18 +1,11 @@
-from pydantic_settings import BaseSettings
-from pydantic import  EmailStr
+from config.config_general import settings   # Importar la configuración
 
-
-class Settings(BaseSettings):
-    MAIL_USERNAME: str = "eventmaster24@outlook.com"
-    MAIL_PASSWORD: str
-    MAIL_FROM: EmailStr = "eventmaster24@outlook.com"
-    MAIL_PORT: int = 587
-    MAIL_SERVER: str = "smtp.office365.com"
-    MAIL_STARTTLS: bool = True
-    MAIL_SSL_TLS: bool = False
-    MAIL_FROM_NAME: str = "Event Master"
-
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
+# Usar las configuraciones de correo
+mail_username = settings.MAIL_USERNAME
+mail_password = settings.MAIL_PASSWORD
+mail_from = settings.MAIL_FROM
+mail_port = settings.MAIL_PORT
+mail_server = settings.MAIL_SERVER
+mail_starttls = settings.MAIL_STARTTLS
+mail_ssl_tls = settings.MAIL_SSL_TLS
+mail_from_name = settings.MAIL_FROM_NAME

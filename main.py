@@ -10,6 +10,7 @@ from routers.user import user_router
 
 app = FastAPI()
 origins = [
+    "https://jesusayala9.github.io",
     "http://localhost",
     "http://localhost:4200",  
 ]
